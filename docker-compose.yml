@@ -1,0 +1,52 @@
+version: '3.3'
+
+services:
+  pgsql:
+    container_name: pgsql
+    image: postgres:12
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: dbtest
+    ports:
+        - 15432:5432
+        
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MARIA_ROOT_PASSWORD: password
+    ports:
+        - 15433:3306
+
+  php-fpm:
+    container_name: php-fpm
+    build:
+      context: ./php-fpm
+    depends_on:
+      - pgsql
+      - mariadb
+    volumes:
+      - ./../:/var/www
+    extra_hosts:
+      outside: 172.17.0.1
+
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+    volumes:
+      - ./../:/var/www
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/sites/:/etc/nginx/sites-available
+      - ./nginx/conf.d/:/etc/nginx/conf.d
+      - ./logs:/var/log
+    depends_on:
+      - php-fpm
+    ports:
+      - "80:80"
+      - "443:443"
+
+
